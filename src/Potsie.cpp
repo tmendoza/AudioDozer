@@ -1,5 +1,7 @@
 #include "AudioDozer.hpp"
 
+#include <stdio.h>
+#include "SynthTools.hpp"
 
 struct Potsie : Module {
 	enum ParamIds {
@@ -16,6 +18,7 @@ struct Potsie : Module {
 
 	enum OutputIds {
 		SINE_OUTPUT,
+		TRI_OUTPUT,
 		SQUARE_OUTPUT,
 		NUM_OUTPUTS
 	};
@@ -27,54 +30,80 @@ struct Potsie : Module {
 	float phase = 0.0;
 	float blinkPhase = 0.0;
 
-	Potsie() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step() override;
+	GenWave *sw = NULL;
+	GenWave *tw = NULL;
 
+	Potsie() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+		info("Init genwave...");
+		sw = genwave_init((FrqValue) engineGetSampleRate());
+		tw = genwave_init((FrqValue) engineGetSampleRate());
+
+		info("Reset genwave...");
+		genwave_reset(sw, 0);
+		genwave_reset(tw, 0);
+	}
+
+	void step() override;
 	// For more advanced Module features, read Rack's engine.hpp header file
 	// - toJson, fromJson: serialization of internal data
 	// - onSampleRateChange: event triggered by a change of sample rate
 	// - onReset, onRandomize, onCreate, onDelete: implements special behavior when user clicks these from the context menu
 };
 
-
 void Potsie::step() {
 	// Implement a simple sine oscillator
 	float deltaTime = engineGetSampleTime();
+	
+	FrqValue basefreq = 130.81f;
+
+	// Here in case we add a switch to alter the base frequency
+	genwave_setfreq(sw, basefreq);
+	genwave_setfreq(tw, basefreq);
 
 	// Compute the frequency from the pitch parameter and input
 	float pitch = params[PITCH_PARAM].value;
-	// pitch += inputs[PITCH_INPUT].value;
+	pitch += inputs[PITCH_INPUT].value;
 	pitch = clamp(pitch, -4.0f, 4.0f);
 	// The default pitch is C4
-	float freq = 261.626f * powf(2.0f, pitch);
-
+	FrqValue newSfreq = sw->frq * powf(2.0f, pitch);
+	FrqValue newTfreq = tw->frq * powf(2.0f, pitch);
 	// Get the phase mix
-	float phasemix = params[PHASE_PARAM].value;
+	//float phasemix = params[PHASE_PARAM].value;
 	
-	float mixinput = 0.0f;
+	//float mixinput = 0.0f;
 	
-	if (inputs[PMIX_INPUT].active) {
-		mixinput = inputs[PMIX_INPUT].value / 10.0f;
-	}
+	//if (inputs[PMIX_INPUT].active) {
+	//	mixinput = inputs[PMIX_INPUT].value / 10.0f;
+	//}
 
-	phasemix = clamp(phasemix + mixinput, 0.0f, 1.0f);
+	//phasemix = clamp(phasemix + mixinput, 0.0f, 1.0f);
 
 	// Accumulate the phase
-	phase += freq * deltaTime;
-	if (phase >= 1.0f)
-		phase -= 1.0f;
+	//phase += freq * deltaTime;
+	//if (phase >= 1.0f)
+	//	phase -= 1.0f;
+	genwave_sin_modulate(sw, newSfreq);
+	genwave_tri_modulate(tw, newTfreq);
 
 	// Compute the sine output
-	float sine = sinf(2.0f * M_PI * phase) + sinf(2.0f * M_PI * phase * phasemix);
+	//float sine = sinf(2.0f * M_PI * phase); // + sinf(2.0f * M_PI * phase * phasemix);
+
+
+	outputs[TRI_OUTPUT].value = genwave_tri_generate(tw, (AmpValue) 5.0);
+
+	AmpValue v = genwave_sin_generate(sw, (AmpValue) 5.0);
+
+	outputs[SINE_OUTPUT].value = v;
+
 	float square = 0.0f;
 
-	if (sine > 0)
-		square = 1;
-	else
-		square = -1;
+	if (v > 0)
+		square = 5.0f;
+	
+	if (v < 0)
+		square = -5.0f;
 
-	outputs[SQUARE_OUTPUT].value = 5.0f * square;
-	outputs[SINE_OUTPUT].value = 5.0f * sine / 2.0f;
+	outputs[SQUARE_OUTPUT].value = square;
 
 	// Blink light at 1Hz
 	blinkPhase += deltaTime;
@@ -97,8 +126,7 @@ struct PotsieWidget : ModuleWidget {
 		addParam(ParamWidget::create<Rogan2PSBlue>(Vec(20, 87), module, Potsie::PITCH_PARAM, -3.0, 3.0, 0.0));
 		addParam(ParamWidget::create<Rogan2PSBlue>(Vec(20, 180), module, Potsie::PHASE_PARAM, 0.0, 1.0, 0.0));
 
-		addInput(Port::create<CL1362Port>(Vec(29, 246), Port::INPUT, module, Potsie::PMIX_INPUT));
-
+		addOutput(Port::create<CL1362Port>(Vec(29, 246), Port::OUTPUT, module, Potsie::TRI_OUTPUT));
 		addOutput(Port::create<CL1362Port>(Vec(6, 278), Port::OUTPUT, module, Potsie::SINE_OUTPUT));
 		addOutput(Port::create<CL1362Port>(Vec(50, 278), Port::OUTPUT, module, Potsie::SQUARE_OUTPUT));
 
