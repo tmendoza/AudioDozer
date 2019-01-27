@@ -9,3 +9,4 @@ extern Plugin *plugin;
 // Forward-declare each Model, defined in each module source file
 extern Model *modelCaptCrunch;
 extern Model *modelPotsie;
+extern Model *modelWeirdOSC;
