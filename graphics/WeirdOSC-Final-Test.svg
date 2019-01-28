@@ -3,13 +3,13 @@
   <g id="LINES">
     <rect id="BACKGROUND" x="0.5" y="0.5" width="600" height="380" style="fill: #fff;stroke: #231f20;stroke-miterlimit: 10"/>
     <rect id="DIVIDER" x="12.45" y="230.67" width="573.96" height="1"/>
-    <rect id="DIVIDER-2" data-name="DIVIDER" x="107.99" y="304.97" width="140" transform="translate(483.46 127.48) rotate(90)"/>
-    <rect id="DIVIDER-3" data-name="DIVIDER" x="8.87" y="18.28" width="573.96" height="1"/>
-    <rect id="DIVIDER-4" data-name="DIVIDER" x="145.95" y="123.97" width="200" transform="translate(370.43 -121.48) rotate(90)"/>
-    <rect id="DIVIDER-5" data-name="DIVIDER" x="282.05" y="123.97" width="200" transform="translate(506.52 -257.59) rotate(90)"/>
-    <rect id="DIVIDER-6" data-name="DIVIDER" x="231.89" y="304.23" width="140" transform="translate(606.61 2.84) rotate(90)"/>
-    <rect id="DIVIDER-7" data-name="DIVIDER" x="377.65" y="304.02" width="140" transform="translate(752.17 -143.13) rotate(90)"/>
-    <rect id="DIVIDER-8" data-name="DIVIDER" x="387.94" y="119.48" width="193.02" transform="translate(604.43 -364.46) rotate(90)"/>
+    <rect id="DIVIDER-2" data-name="DIVIDER" x="8.87" y="18.28" width="573.96" height="1"/>
+    <line x1="245.94" y1="30.72" x2="245.94" y2="215.39" style="fill: #231f20;stroke: #231f20;stroke-miterlimit: 10"/>
+    <line x1="381.94" y1="32.72" x2="381.94" y2="217.39" style="fill: #231f20;stroke: #231f20;stroke-miterlimit: 10"/>
+    <line x1="486.94" y1="31.72" x2="486.94" y2="216.39" style="fill: #231f20;stroke: #231f20;stroke-miterlimit: 10"/>
+    <line x1="178.67" y1="238.05" x2="178.67" y2="375.89" style="fill: #231f20;stroke: #231f20;stroke-miterlimit: 10"/>
+    <line x1="299.67" y1="238.05" x2="299.67" y2="375.89" style="fill: #231f20;stroke: #231f20;stroke-miterlimit: 10"/>
+    <line x1="447.54" y1="238.61" x2="447.54" y2="376.44" style="fill: #231f20;stroke: #231f20;stroke-miterlimit: 10"/>
   </g>
   <g id="LABELS">
     <g id="VCA_LABEL_CV">
