@@ -25,6 +25,10 @@ struct WeirdOSC : Module {
 		ENV2_KNOB_DCY,
 		ENV2_KNOB_REL,
 		ENV2_KNOB_SUS,
+		LFO1_BUTTON_DEST,
+		LFO2_BUTTON_DEST,
+		VCO_BUTTON_HIT,
+		VCO_BUTTON_MODE,
 		NUM_PARAMS
 	};
 
@@ -53,6 +57,7 @@ struct WeirdOSC : Module {
 		MIX_VCC_SUM,
 		VCF_VCC_OUT,
 		VCA_VCC_OUT,
+		VCA_CV_INPUT,
 		LFO1_VCC_SAW,
 		LFO1_VCC_TRI,
 		LFO1_VCC_SIN,
@@ -63,10 +68,30 @@ struct WeirdOSC : Module {
 		LFO2_VCC_S_H,
 		ENV1_CV_OUT,
 		ENV2_CV_OUT,
+		ENV1_GATE_IN,
+		ENV2_GATE_IN,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		BLINK_LIGHT,
+		LFO1_LIGHT_KNOB_FREQ,
+		VCO_LIGHT_TRIG,
+		VCO_LIGHT_LOOP,
+		VCO_LIGHT_FREE,
+		LFO1_LIGHT_FREQ,
+		LFO1_LIGHT_RES,
+		LFO1_LIGHT_IDX,
+		LFO1_LIGHT_PWM,
+		LFO2_LIGHT_ENV1,
+		LFO2_LIGHT_ENV2,
+		LFO2_LIGHT_FREQ,
+		LFO2_LIGHT_BRR,
+		ENV2_LIGHT_FRQ,
+		ENV1_LIGHT_FRQ,
+		VCO_OCS2_LIGHT_FRQ,
+		VCO_OSC1_LIGHT_FRQ,
+		LFO2_LIGHT_KNOB_FRQ,
+		VCA_LIGHT_LVL,
+		VCF_LIGHT_FRQ_LVL,
 		NUM_LIGHTS
 	};
 
@@ -94,7 +119,11 @@ void WeirdOSC::step() {
 // Big Knob 	Davies1900hLargeBlack
 // Small Knob  	Davies1900hBlack
 // CV InOut 	CL1362
-// 
+// Button		BefacoPush_0
+// LFO1_BUTTON_DEST/12.49/338.547
+// LFO2_BUTTON_DEST/185.97/338.203
+// VCO_BUTTON_HIT/12.31/175.467
+// VCO_MODE_SWITCH/12.05/135.906
 
 struct WeirdOSCWidget : ModuleWidget {
 	WeirdOSCWidget(WeirdOSC *module) : ModuleWidget(module) {
@@ -104,6 +133,11 @@ struct WeirdOSCWidget : ModuleWidget {
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+
+		addParam(ParamWidget::create<BefacoPush>(Vec(12.05, 135.906), module, WeirdOSC::VCO_BUTTON_MODE, 0.0f, 1.0f, 0.0f));
+		addParam(ParamWidget::create<BefacoPush>(Vec(12.49, 320.547), module, WeirdOSC::LFO1_BUTTON_DEST, 0.0f, 1.0f, 0.0f));
+		addParam(ParamWidget::create<BefacoPush>(Vec(188.97, 320.203), module, WeirdOSC::LFO2_BUTTON_DEST, 0.0f, 1.0f, 0.0f));
+		addParam(ParamWidget::create<BefacoPush>(Vec(12.31, 175.467), module, WeirdOSC::VCO_BUTTON_HIT, 0.0f, 1.0f, 0.0f));
 
 		addParam(ParamWidget::create<Davies1900hLargeBlackKnob>(Vec(42.37, 80.435), module, WeirdOSC::VCO_KNOB_OSC1_FREQ, -3.0, 3.0, 0.0));
 		addParam(ParamWidget::create<Davies1900hBlackKnob>(Vec(165.49, 160.803), module, WeirdOSC::VCO_KNOB_OSC1_FINE, -3.0, 3.0, 0.0));
@@ -149,19 +183,40 @@ struct WeirdOSCWidget : ModuleWidget {
 		addOutput(Port::create<CL1362Port>(Vec(407.10, 312.12), Port::OUTPUT, module, WeirdOSC::ENV1_CV_OUT));
 		addOutput(Port::create<CL1362Port>(Vec(553.63, 311.57), Port::OUTPUT, module, WeirdOSC::ENV2_CV_OUT));
 
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::VCO_CV_IDX));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::MIV_VCC_IN3));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::MIX_VCC_IN2));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::MIX_VCC_IN1));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::MIX_CV_CV3));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::MIX_CV_CV2));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::MIX_CV_CV1));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::VCF_CV_IN));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::VCF_VCC_IN));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::VCO_CV_TRIG));
-		addInput(Port::create<CL1362Port>(Vec(6, 272), Port::INPUT, module, WeirdOSC::VCA_VCC_IN));
+		addInput(Port::create<CL1362Port>(Vec(109.82, 189.877), Port::INPUT, module, WeirdOSC::VCO_CV_IDX));
+		addInput(Port::create<CL1362Port>(Vec(255.46, 132.41), Port::INPUT, module, WeirdOSC::MIV_VCC_IN3));
+		addInput(Port::create<CL1362Port>(Vec(255.46, 81.882), Port::INPUT, module, WeirdOSC::MIX_VCC_IN2));
+		addInput(Port::create<CL1362Port>(Vec(255.46, 31.354), Port::INPUT, module, WeirdOSC::MIX_VCC_IN1));
+		addInput(Port::create<CL1362Port>(Vec(339.50, 133.053), Port::INPUT, module, WeirdOSC::MIX_CV_CV3));
+		addInput(Port::create<CL1362Port>(Vec(339.50, 82.525), Port::INPUT, module, WeirdOSC::MIX_CV_CV2));
+		addInput(Port::create<CL1362Port>(Vec(339.50, 31.998), Port::INPUT, module, WeirdOSC::MIX_CV_CV1));
+		addInput(Port::create<CL1362Port>(Vec(420.43, 184.071), Port::INPUT, module, WeirdOSC::VCF_CV_IN));
+		addInput(Port::create<CL1362Port>(Vec(390.43, 164.208), Port::INPUT, module, WeirdOSC::VCF_VCC_IN));
+		addInput(Port::create<CL1362Port>(Vec(110.95, 75.997), Port::INPUT, module, WeirdOSC::VCO_CV_TRIG));
+		addInput(Port::create<CL1362Port>(Vec(488.94, 164.66), Port::INPUT, module, WeirdOSC::VCA_VCC_IN));
+		addInput(Port::create<CL1362Port>(Vec(407.10, 249.593), Port::INPUT, module, WeirdOSC::ENV1_GATE_IN));
+		addInput(Port::create<CL1362Port>(Vec(553.63, 249.043), Port::INPUT, module, WeirdOSC::ENV2_GATE_IN));
+		addInput(Port::create<CL1362Port>(Vec(518.94, 184.524), Port::INPUT, module, WeirdOSC::VCA_CV_INPUT));
 
-		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(41, 59), module, WeirdOSC::BLINK_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(100.37, 294.972), module, WeirdOSC::LFO1_LIGHT_KNOB_FREQ));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(11.13, 253.186), module, WeirdOSC::LFO1_LIGHT_FREQ));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(10.37, 87.901), module, WeirdOSC::VCO_LIGHT_TRIG));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(10.37, 102.437), module, WeirdOSC::VCO_LIGHT_LOOP));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(10.39, 116.972), module, WeirdOSC::VCO_LIGHT_FREE));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(11.13, 267.721), module, WeirdOSC::LFO1_LIGHT_RES));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(11.16, 282.256), module, WeirdOSC::LFO1_LIGHT_IDX));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(11.39, 297.023), module, WeirdOSC::LFO1_LIGHT_PWM));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(187.61, 250.842), module, WeirdOSC::LFO2_LIGHT_ENV1));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(187.61, 265.378), module, WeirdOSC::LFO2_LIGHT_ENV2));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(187.64, 279.913), module, WeirdOSC::LFO2_LIGHT_FREQ));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(187.87, 294.679), module, WeirdOSC::LFO2_LIGHT_BRR));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(495.99, 349.606), module, WeirdOSC::ENV2_LIGHT_FRQ));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(352.44, 349.606), module, WeirdOSC::ENV1_LIGHT_FRQ));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(91.37, 129.438), module, WeirdOSC::VCO_OCS2_LIGHT_FRQ));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(208.23, 130.457), module, WeirdOSC::VCO_OSC1_LIGHT_FRQ));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(559.85, 74.83), module, WeirdOSC::VCA_LIGHT_LVL));
+		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(459.04, 75.437), module, WeirdOSC::VCF_LIGHT_FRQ_LVL));
+
 	}
 };
 
