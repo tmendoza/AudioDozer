@@ -1,7 +1,7 @@
 #include "AudioDozer.hpp"
 
 #include <stdio.h>
-#include "SynthTools.hpp"
+#include "SndDefs.h"
 
 struct Potsie : Module {
 	enum ParamIds {
@@ -27,20 +27,39 @@ struct Potsie : Module {
 		NUM_LIGHTS
 	};
 
-	float phase = 0.0;
-	float blinkPhase = 0.0;
+	float *sinoutbuf = NULL;
+	float *trioutbuf = NULL;
+	float *sqroutbuf = NULL;
+	float *sawoutbuf = NULL;
 
-	GenWave *sw = NULL;
-	GenWave *tw = NULL;
+	float *sinwavet = NULL;
+	float *triwavet = NULL;
+	float *sqrwavet = NULL;
+	float *sawwavet = NULL;
+
+	float triidx = 0.0f;
+	float sqridx = 0.0f;
+	float sawidx = 0.0f; 
+	float sinidx = 0.0f;
+
+	float phase = 0.0f;
+	float blinkPhase = 0.0f;
+
+	//GenWave *sw = NULL;
+	//GenWave *tw = NULL;
 
 	Potsie() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
-		info("Init genwave...");
-		sw = genwave_init((FrqValue) engineGetSampleRate());
-		tw = genwave_init((FrqValue) engineGetSampleRate());
+		info("Init output buffer...");
+		sinoutbuf = (float *) malloc(def_vsize);
+		trioutbuf = (float *) malloc(def_vsize);
+		sqroutbuf = (float *) malloc(def_vsize);
+		sawoutbuf = (float *) malloc(def_vsize);
 
-		info("Reset genwave...");
-		genwave_reset(sw, 0);
-		genwave_reset(tw, 0);
+		info("init sine wave lookup table...");
+		sinwavet = sinus_table();
+		triwavet = triang_table(11);
+		sqrwavet = sqr_table(11);
+		sawwavet = saw_table(11);;
 	}
 
 	void step() override;
@@ -54,19 +73,24 @@ void Potsie::step() {
 	// Implement a simple sine oscillator
 	float deltaTime = engineGetSampleTime();
 	
-	FrqValue basefreq = 130.81f;
+	float basefreq = 130.81f;
 
 	// Here in case we add a switch to alter the base frequency
-	genwave_setfreq(sw, basefreq);
-	genwave_setfreq(tw, basefreq);
+	//genwave_setfreq(sw, basefreq);
+	//genwave_setfreq(tw, basefreq);
 
 	// Compute the frequency from the pitch parameter and input
 	float pitch = params[PITCH_PARAM].value;
 	pitch += inputs[PITCH_INPUT].value;
 	pitch = clamp(pitch, -4.0f, 4.0f);
+
+	osci(sinoutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sinwavet, &sinidx);
+	osci(trioutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), triwavet, &triidx);
+	osci(sqroutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sqrwavet, &sqridx);
+	osci(sawoutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sawwavet, &sawidx);
 	// The default pitch is C4
-	FrqValue newSfreq = sw->frq * powf(2.0f, pitch);
-	FrqValue newTfreq = tw->frq * powf(2.0f, pitch);
+	//FrqValue newSfreq = sw->frq * powf(2.0f, pitch);
+	//FrqValue newTfreq = tw->frq * powf(2.0f, pitch);
 	// Get the phase mix
 	//float phasemix = params[PHASE_PARAM].value;
 	
@@ -82,35 +106,33 @@ void Potsie::step() {
 	//phase += freq * deltaTime;
 	//if (phase >= 1.0f)
 	//	phase -= 1.0f;
-	genwave_sin_modulate(sw, newSfreq);
-	genwave_tri_modulate(tw, newTfreq);
+	//genwave_sin_modulate(sw, newSfreq);
+	//genwave_tri_modulate(tw, newTfreq);
 
 	// Compute the sine output
 	//float sine = sinf(2.0f * M_PI * phase); // + sinf(2.0f * M_PI * phase * phasemix);
 
 
-	outputs[TRI_OUTPUT].value = genwave_tri_generate(tw, (AmpValue) 5.0);
+	outputs[TRI_OUTPUT].value = *trioutbuf;
+	outputs[SINE_OUTPUT].value = *sinoutbuf;
+	outputs[SQUARE_OUTPUT].value = (*sqroutbuf + *sawoutbuf) / 2.0f;
 
-	AmpValue v = genwave_sin_generate(sw, (AmpValue) 5.0);
+	///float square = 0.0f;
 
-	outputs[SINE_OUTPUT].value = v;
-
-	float square = 0.0f;
-
-	if (v > 0)
-		square = 5.0f;
+	//if (v > 0)
+	//	square = 5.0f;
 	
-	if (v < 0)
-		square = -5.0f;
+	//if (v < 0)
+	//	square = -5.0f;
 
-	outputs[SQUARE_OUTPUT].value = square;
+	//outputs[SQUARE_OUTPUT].value = square;
 
 	// Blink light at 1Hz
-	blinkPhase += deltaTime;
-	if (blinkPhase >= 1.0f)
-		blinkPhase -= 1.0f;
+	//blinkPhase += deltaTime;
+	//if (blinkPhase >= 1.0f)
+	//	blinkPhase -= 1.0f;
 
-	lights[BLINK_LIGHT].value = (blinkPhase < 0.5f) ? 1.0f : 0.0f;
+	//lights[BLINK_LIGHT].value = (blinkPhase < 0.5f) ? 1.0f : 0.0f;
 }
 
 
