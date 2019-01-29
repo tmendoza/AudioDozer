@@ -57,7 +57,7 @@ struct Potsie : Module {
 
 		info("init sine wave lookup table...");
 		sinwavet = sinus_table();
-		triwavet = triang_table(11);
+		triwavet = triang_table(30);
 		sqrwavet = sqr_table(11);
 		sawwavet = saw_table(11);;
 	}
@@ -73,7 +73,7 @@ void Potsie::step() {
 	// Implement a simple sine oscillator
 	float deltaTime = engineGetSampleTime();
 	
-	float basefreq = 130.81f;
+	float basefreq = 65.41f;
 
 	// Here in case we add a switch to alter the base frequency
 	//genwave_setfreq(sw, basefreq);
@@ -84,55 +84,29 @@ void Potsie::step() {
 	pitch += inputs[PITCH_INPUT].value;
 	pitch = clamp(pitch, -4.0f, 4.0f);
 
-	osci(sinoutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sinwavet, &sinidx);
-	osci(trioutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), triwavet, &triidx);
-	osci(sqroutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sqrwavet, &sqridx);
-	osci(sawoutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sawwavet, &sawidx);
+	oscc(sinoutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sinwavet, &sinidx);
+	oscc(trioutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), triwavet, &triidx);
+	oscc(sqroutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sqrwavet, &sqridx);
+	oscc(sawoutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sawwavet, &sawidx);
+	
+	outputs[TRI_OUTPUT].value = *sawoutbuf;
+	outputs[SINE_OUTPUT].value = *sinoutbuf;
+	outputs[SQUARE_OUTPUT].value = (*sqroutbuf + *trioutbuf) / 2.0f;
 	// The default pitch is C4
-	//FrqValue newSfreq = sw->frq * powf(2.0f, pitch);
-	//FrqValue newTfreq = tw->frq * powf(2.0f, pitch);
-	// Get the phase mix
-	//float phasemix = params[PHASE_PARAM].value;
-	
-	//float mixinput = 0.0f;
-	
-	//if (inputs[PMIX_INPUT].active) {
-	//	mixinput = inputs[PMIX_INPUT].value / 10.0f;
-	//}
-
-	//phasemix = clamp(phasemix + mixinput, 0.0f, 1.0f);
+	float freq = basefreq * powf(2.0f, pitch);
 
 	// Accumulate the phase
 	//phase += freq * deltaTime;
 	//if (phase >= 1.0f)
 	//	phase -= 1.0f;
-	//genwave_sin_modulate(sw, newSfreq);
-	//genwave_tri_modulate(tw, newTfreq);
-
-	// Compute the sine output
-	//float sine = sinf(2.0f * M_PI * phase); // + sinf(2.0f * M_PI * phase * phasemix);
-
-
-	outputs[TRI_OUTPUT].value = *trioutbuf;
-	outputs[SINE_OUTPUT].value = *sinoutbuf;
-	outputs[SQUARE_OUTPUT].value = (*sqroutbuf + *sawoutbuf) / 2.0f;
-
-	///float square = 0.0f;
-
-	//if (v > 0)
-	//	square = 5.0f;
-	
-	//if (v < 0)
-	//	square = -5.0f;
-
-	//outputs[SQUARE_OUTPUT].value = square;
 
 	// Blink light at 1Hz
-	//blinkPhase += deltaTime;
-	//if (blinkPhase >= 1.0f)
-	//	blinkPhase -= 1.0f;
+	blinkPhase += freq * deltaTime;
 
-	//lights[BLINK_LIGHT].value = (blinkPhase < 0.5f) ? 1.0f : 0.0f;
+	if (blinkPhase >= 1.0f)
+		blinkPhase -= 1.0f;
+
+	lights[BLINK_LIGHT].setBrightnessSmooth(fmaxf(0.0f, *sinoutbuf / 5.0f));
 }
 
 
