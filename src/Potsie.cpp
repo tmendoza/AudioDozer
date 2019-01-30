@@ -20,6 +20,7 @@ struct Potsie : Module {
 		SINE_OUTPUT,
 		TRI_OUTPUT,
 		SQUARE_OUTPUT,
+		SAW_OUTPUT,
 		NUM_OUTPUTS
 	};
 	enum LightIds {
@@ -57,9 +58,9 @@ struct Potsie : Module {
 
 		info("init sine wave lookup table...");
 		sinwavet = sinus_table();
-		triwavet = triang_table(30);
-		sqrwavet = sqr_table(11);
-		sawwavet = saw_table(11);;
+		triwavet = triang_table(31);
+		sqrwavet = sqr_table(31);
+		sawwavet = saw_table(31);;
 	}
 
 	void step() override;
@@ -84,14 +85,18 @@ void Potsie::step() {
 	pitch += inputs[PITCH_INPUT].value;
 	pitch = clamp(pitch, -4.0f, 4.0f);
 
-	oscc(sinoutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sinwavet, &sinidx);
-	oscc(trioutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), triwavet, &triidx);
-	oscc(sqroutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sqrwavet, &sqridx);
-	oscc(sawoutbuf, 5.0f, (basefreq * powf(2.0f, pitch)), sawwavet, &sawidx);
+	float oscpitch = basefreq * powf(2.0f, pitch);
+
+	oscc(sinoutbuf, 5.0f, oscpitch, sinwavet, &sinidx);
+	oscc(trioutbuf, 5.0f, oscpitch, triwavet, &triidx);
+	oscc(sqroutbuf, 5.0f, oscpitch, sqrwavet, &sqridx);
+	oscc(sawoutbuf, 5.0f, oscpitch, sawwavet, &sawidx);
 	
-	outputs[TRI_OUTPUT].value = *sawoutbuf;
+	outputs[TRI_OUTPUT].value = *trioutbuf;
 	outputs[SINE_OUTPUT].value = *sinoutbuf;
-	outputs[SQUARE_OUTPUT].value = (*sqroutbuf + *trioutbuf) / 2.0f;
+	outputs[SQUARE_OUTPUT].value = *sqroutbuf;
+	outputs[SAW_OUTPUT].value = *sawoutbuf;
+
 	// The default pitch is C4
 	float freq = basefreq * powf(2.0f, pitch);
 
@@ -122,9 +127,10 @@ struct PotsieWidget : ModuleWidget {
 		addParam(ParamWidget::create<Rogan2PSBlue>(Vec(20, 87), module, Potsie::PITCH_PARAM, -3.0, 3.0, 0.0));
 		addParam(ParamWidget::create<Rogan2PSBlue>(Vec(20, 180), module, Potsie::PHASE_PARAM, 0.0, 1.0, 0.0));
 
-		addOutput(Port::create<CL1362Port>(Vec(29, 246), Port::OUTPUT, module, Potsie::TRI_OUTPUT));
-		addOutput(Port::create<CL1362Port>(Vec(6, 278), Port::OUTPUT, module, Potsie::SINE_OUTPUT));
-		addOutput(Port::create<CL1362Port>(Vec(50, 278), Port::OUTPUT, module, Potsie::SQUARE_OUTPUT));
+		addOutput(Port::create<CL1362Port>(Vec(6, 246), Port::OUTPUT, module, Potsie::TRI_OUTPUT));
+		addOutput(Port::create<CL1362Port>(Vec(50, 246), Port::OUTPUT, module, Potsie::SAW_OUTPUT));
+		addOutput(Port::create<CL1362Port>(Vec(6, 282), Port::OUTPUT, module, Potsie::SINE_OUTPUT));
+		addOutput(Port::create<CL1362Port>(Vec(50, 282), Port::OUTPUT, module, Potsie::SQUARE_OUTPUT));
 
 		addChild(ModuleLightWidget::create<MediumLight<RedLight>>(Vec(41, 59), module, Potsie::BLINK_LIGHT));
 	}
